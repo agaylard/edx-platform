@@ -64,7 +64,6 @@ from django.core import signing
 from django.utils.crypto import get_random_string
 from hashlib import sha256
 from logging import getLogger
-import json
 
 
 log = getLogger(__name__)
@@ -86,6 +85,7 @@ class SafeCookieData(object):
     checking its creation date using settings.SESSION_COOKIE_AGE.
     """
     CURRENT_VERSION = 1
+    SEPARATOR = u"|"
 
     def __init__(self, version, session_id, key_salt, signature):
         """
@@ -137,7 +137,11 @@ class SafeCookieData(object):
         safe_cookie_string.
         """
         try:
-            safe_cookie_data = SafeCookieData(*json.loads(safe_cookie_string))
+            raw_cookie_components = safe_cookie_string.split(cls.SEPARATOR)
+            # the first item in this list is the class's CURRENT_VERSION,
+            # which is an int
+            raw_cookie_components[0] = int(raw_cookie_components[0])
+            safe_cookie_data = SafeCookieData(*raw_cookie_components)
         except ValueError:
             raise SafeCookieError("SafeCookieData BWC could not be parsed as JSON '{0!r}'.".format(safe_cookie_string))
         except TypeError:
@@ -157,7 +161,7 @@ class SafeCookieData(object):
         """
         Returns a string serialization of the safe cookie data.
         """
-        return json.dumps((self.version, self.session_id, self.key_salt, self.signature))
+        return (self.SEPARATOR).join([unicode(self.version), self.session_id, self.key_salt, self.signature])
 
     def sign(self, user_id):
         """

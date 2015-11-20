@@ -207,13 +207,16 @@ class BasketsViewTests(EnrollmentEventTestMixin, UserMixin, ModuleStoreTestCase)
 
         # Validate the response content
         self.assertEqual(response.status_code, 200)
-        msg = Messages.NO_SKU_ENROLLED.format(enrollment_mode='honor', course_id=self.course.id,
-                                              username=self.user.username)
+        msg = Messages.NO_SKU_ENROLLED.format(
+            enrollment_mode=CourseMode.DEFAULT_MODE_SLUG,
+            course_id=self.course.id,
+            username=self.user.username
+        )
         self.assertResponseMessage(response, msg)
 
     def test_course_without_sku(self):
         """
-        If the course does NOT have a SKU, the user should be enrolled in the course (under the honor mode) and
+        If the course does NOT have a SKU, the user should be enrolled in the course (under the default mode) and
         redirected to the user dashboard.
         """
         # Remove SKU from all course modes
@@ -240,7 +243,7 @@ class BasketsViewTests(EnrollmentEventTestMixin, UserMixin, ModuleStoreTestCase)
         self.assertTrue(CourseEnrollment.is_enrolled(self.user, self.course.id))
 
     def assertProfessionalModeBypassed(self):
-        """ Verifies that the view returns HTTP 406 when a course with no honor mode is encountered. """
+        """ Verifies that the view returns HTTP 406 when a course with no honor or audit mode is encountered. """
 
         CourseMode.objects.filter(course_id=self.course.id).delete()
         mode = CourseMode.NO_ID_PROFESSIONAL_MODE
@@ -252,7 +255,7 @@ class BasketsViewTests(EnrollmentEventTestMixin, UserMixin, ModuleStoreTestCase)
 
         # The view should return an error status code
         self.assertEqual(response.status_code, 406)
-        msg = Messages.NO_HONOR_MODE.format(course_id=self.course.id)
+        msg = Messages.NO_DEFAULT_ENROLLMENT_MODE.format(course_id=self.course.id)
         self.assertResponseMessage(response, msg)
 
     def test_course_with_professional_mode_only(self):

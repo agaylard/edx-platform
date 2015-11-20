@@ -27,6 +27,7 @@ from xblock.core import XBlock
 from xblock.fragment import Fragment
 
 from capa.tests.response_xml_factory import OptionResponseXMLFactory
+from course_modes.models import CourseMode
 from courseware import module_render as render
 from courseware.courses import get_course_with_access, course_image_url, get_course_info_section
 from courseware.field_overrides import OverrideFieldData
@@ -724,9 +725,9 @@ class TestProctoringRendering(ModuleStoreTestCase):
             )
 
     @ddt.data(
-        ('honor', False, None, None),
+        ('audit', False, None, None),
         (
-            'honor',
+            CourseMode.AUDIT,
             True,
             'eligible',
             {
@@ -737,7 +738,7 @@ class TestProctoringRendering(ModuleStoreTestCase):
             }
         ),
         (
-            'honor',
+            CourseMode.AUDIT,
             True,
             'submitted',
             {
@@ -748,7 +749,7 @@ class TestProctoringRendering(ModuleStoreTestCase):
             }
         ),
         (
-            'honor',
+            CourseMode.AUDIT,
             True,
             'error',
             {
@@ -851,21 +852,21 @@ class TestProctoringRendering(ModuleStoreTestCase):
 
     @ddt.data(
         (
-            'honor',
+            CourseMode.AUDIT,
             True,
             None,
             'Try a proctored exam',
             True
         ),
         (
-            'honor',
+            CourseMode.AUDIT,
             True,
             'submitted',
             'You have submitted this practice proctored exam',
             False
         ),
         (
-            'honor',
+            CourseMode.AUDIT,
             True,
             'error',
             'There was a problem with your practice proctoring session',

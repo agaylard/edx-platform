@@ -285,7 +285,7 @@ class CourseRetrieveUpdateViewTests(CourseApiViewTestMixin, ModuleStoreTestCase)
 
         expected_modes = [
             CourseMode(
-                mode_slug=u'honor',
+                mode_slug=CourseMode.AUDIT,
                 min_price=150, currency=u'USD',
                 sku=u'ABC123'
             )

@@ -21,31 +21,31 @@ class CourseOverviewField(serializers.RelatedField):
         course_id = unicode(course_overview.id)
 
         if course_overview.advertised_start is not None:
-            start_type = "string"
+            start_type = 'string'
             start_display = course_overview.advertised_start
         elif course_overview.start != DEFAULT_START_DATE:
-            start_type = "timestamp"
-            start_display = defaultfilters.date(course_overview.start, "DATE_FORMAT")
+            start_type = 'timestamp'
+            start_display = defaultfilters.date(course_overview.start, 'DATE_FORMAT')
         else:
-            start_type = "empty"
+            start_type = 'empty'
             start_display = None
 
         request = self.context.get('request')
         return {
             # identifiers
-            "id": course_id,
-            "name": course_overview.display_name,
-            "number": course_overview.display_number_with_default,
-            "org": course_overview.display_org_with_default,
+            'id': course_id,
+            'name': course_overview.display_name,
+            'number': course_overview.display_number_with_default,
+            'org': course_overview.display_org_with_default,
 
             # dates
-            "start": course_overview.start,
-            "start_display": start_display,
-            "start_type": start_type,
-            "end": course_overview.end,
+            'start': course_overview.start,
+            'start_display': start_display,
+            'start_type': start_type,
+            'end': course_overview.end,
 
             # notification info
-            "subscription_id": course_overview.clean_id(padding_char='_'),
+            'subscription_id': course_overview.clean_id(padding_char='_'),
 
             # access info
             'courseware_access': has_access(
@@ -55,7 +55,7 @@ class CourseOverviewField(serializers.RelatedField):
             ).to_json(),
 
             # various URLs
-            "course_image": course_overview.course_image_url,
+            'course_image': course_overview.course_image_url,
             'course_about': reverse(
                 'about_course',
                 kwargs={'course_id': course_id},
@@ -84,11 +84,11 @@ class CourseOverviewField(serializers.RelatedField):
             ),
 
             # Note: The following 2 should be deprecated.
-            "social_urls": {
-                "facebook": course_overview.facebook_url,
+            'social_urls': {
+                'facebook': course_overview.facebook_url,
             },
-            "latest_updates": {
-                "video": None
+            'latest_updates': {
+                'video': None
             },
         }
 

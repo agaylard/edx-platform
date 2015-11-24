@@ -182,7 +182,7 @@ class TestUserEnrollmentApi(UrlResetMixin, MobileAPITestCase, MobileAuthUserTest
         certificate_data = response.data[0]['certificate']
         self.assertDictEqual(certificate_data, {})
 
-    def test_certificate(self):
+    def test_pdf_certificate(self):
         self.login_and_enroll()
 
         certificate_url = "http://test_certificate_url"

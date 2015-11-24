@@ -91,9 +91,10 @@ class CourseEnrollmentSerializer(serializers.ModelSerializer):
         """Returns the information about the user's certificate in the course."""
         certificate_info = certificate_downloadable_status(model.user, model.course_id)
         if certificate_info['is_downloadable']:
-            request = self.context.get('request', None)
             return {
-                "url": request.build_absolute_uri(certificate_info['download_url']),
+                'url': self.context['request'].build_absolute_uri(
+                    certificate_info['download_url']
+                ),
             }
         else:
             return {}

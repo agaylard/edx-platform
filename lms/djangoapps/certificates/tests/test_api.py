@@ -37,7 +37,9 @@ class WebCertificateTestMixin(object):
     """
     @contextmanager
     def _mock_passing_grade(self):
-        """Mock the grading function to always return a passing grade. """
+        """
+        Mock the grading function to always return a passing grade.
+        """
         symbol = 'courseware.grades.grade'
         with patch(symbol) as mock_grade:
             mock_grade.return_value = {'grade': 'Pass', 'percent': 0.75}
@@ -45,7 +47,9 @@ class WebCertificateTestMixin(object):
 
     @contextmanager
     def _mock_queue(self, is_successful=True):
-        """Mock the "send to XQueue" method to return either success or an error. """
+        """
+        Mock the "send to XQueue" method to return either success or an error.
+        """
         symbol = 'capa.xqueue_interface.XQueueInterface.send_to_queue'
         with patch(symbol) as mock_send_to_queue:
             if is_successful:
@@ -137,7 +141,7 @@ class CertificateDownloadableStatusTests(WebCertificateTestMixin, ModuleStoreTes
             }
         )
 
-    def test_with_downloadable_cert(self):
+    def test_with_downloadable_pdf_cert(self):
         GeneratedCertificateFactory.create(
             user=self.student,
             course_id=self.course.id,

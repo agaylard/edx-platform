@@ -222,15 +222,18 @@ class UserCourseEnrollmentsList(generics.ListAPIView):
         The HTTP 200 response has the following values.
 
         * certificate: Information about the user's earned certificate in the
-            course.
+          course.
         * course: A collection of the following data about the course.
 
         * courseware_access: A JSON representation with access information for the course,
-            including any access errors.
+          including any access errors.
+
           * course_about: The URL to the course about page.
           * course_handouts: The URI to get data for course handouts.
           * course_image: The path to the course image.
           * course_updates: The URI to get data for course updates.
+          * discussion_url: The URI to access data for course discussions if
+            it is enabled, otherwise null.
           * end: The end date of the course.
           * id: The unique ID of the course.
           * latest_updates: Reserved for future use.
@@ -247,8 +250,6 @@ class UserCourseEnrollmentsList(generics.ListAPIView):
             the course.
           * video_outline: The URI to get the list of all videos that the user
             can access in the course.
-          * discussion_url: The URI to access data for course discussions if
-            it is enabled, otherwise null.
 
         * created: The date the course was created.
         * is_active: Whether the course is currently active. Possible values

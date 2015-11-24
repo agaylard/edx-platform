@@ -9,6 +9,7 @@ import pytz
 from django.conf import settings
 from django.utils import timezone
 from django.template import defaultfilters
+from django.test import RequestFactory
 
 from certificates.models import CertificateStatuses
 from certificates.tests.factories import GeneratedCertificateFactory
@@ -24,11 +25,11 @@ from util.milestones_helpers import (
 )
 from xmodule.course_module import DEFAULT_START_DATE
 from xmodule.modulestore.tests.factories import ItemFactory, CourseFactory
+from util.testing import UrlResetMixin
 
 from .. import errors
 from ..testutils import MobileAPITestCase, MobileAuthTestMixin, MobileAuthUserTestMixin, MobileCourseAccessTestMixin
 from .serializers import CourseEnrollmentSerializer
-from util.testing import UrlResetMixin
 
 
 class TestUserDetailApi(MobileAPITestCase, MobileAuthUserTestMixin):
@@ -382,21 +383,29 @@ class TestCourseEnrollmentSerializer(MobileAPITestCase):
     """
     Test the course enrollment serializer
     """
-    def test_success(self):
+    def setUp(self):
+        super(TestCourseEnrollmentSerializer, self).setUp()
         self.login_and_enroll()
+        self.request = RequestFactory().get('/')
+        self.request.user = self.user
 
-        serialized = CourseEnrollmentSerializer(CourseEnrollment.enrollments_for_user(self.user)[0]).data
+    def test_success(self):
+        serialized = CourseEnrollmentSerializer(
+            CourseEnrollment.enrollments_for_user(self.user)[0],
+            context={'request': self.request},
+        ).data
         self.assertEqual(serialized['course']['name'], self.course.display_name)
         self.assertEqual(serialized['course']['number'], self.course.id.course)
         self.assertEqual(serialized['course']['org'], self.course.id.org)
 
     def test_with_display_overrides(self):
-        self.login_and_enroll()
-
         self.course.display_coursenumber = "overridden_number"
         self.course.display_organization = "overridden_org"
         self.store.update_item(self.course, self.user.id)
 
-        serialized = CourseEnrollmentSerializer(CourseEnrollment.enrollments_for_user(self.user)[0]).data
+        serialized = CourseEnrollmentSerializer(
+            CourseEnrollment.enrollments_for_user(self.user)[0],
+            context={'request': self.request},
+        ).data
         self.assertEqual(serialized['course']['number'], self.course.display_coursenumber)
         self.assertEqual(serialized['course']['org'], self.course.display_organization)

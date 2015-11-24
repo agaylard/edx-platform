@@ -13,7 +13,9 @@ from xmodule.course_module import DEFAULT_START_DATE
 
 
 class CourseOverviewField(serializers.RelatedField):
-    """Custom field to wrap a CourseDescriptor object. Read-only."""
+    """
+    Custom field to wrap a CourseOverview object. Read-only.
+    """
 
     def to_representation(self, course_overview):
         course_id = unicode(course_overview.id)
@@ -28,17 +30,58 @@ class CourseOverviewField(serializers.RelatedField):
             start_type = "empty"
             start_display = None
 
-        response_data = {
+        request = self.context.get('request')
+        return {
+            # identifiers
             "id": course_id,
             "name": course_overview.display_name,
             "number": course_overview.display_number_with_default,
             "org": course_overview.display_org_with_default,
+
+            # dates
             "start": course_overview.start,
             "start_display": start_display,
             "start_type": start_type,
             "end": course_overview.end,
-            "course_image": course_overview.course_image_url,
+
+            # notification info
             "subscription_id": course_overview.clean_id(padding_char='_'),
+
+            # access info
+            'courseware_access': has_access(
+                request.user,
+                'load_mobile',
+                course_overview
+            ).to_json(),
+
+            # various URLs
+            "course_image": course_overview.course_image_url,
+            'course_about': reverse(
+                'about_course',
+                kwargs={'course_id': course_id},
+                request=request,
+            ),
+            'course_updates': reverse(
+                'course-updates-list',
+                kwargs={'course_id': course_id},
+                request=request,
+            ),
+            'course_handouts': reverse(
+                'course-handouts-list',
+                kwargs={'course_id': course_id},
+                request=request,
+            ),
+            'discussion_url': reverse(
+                'discussion_course',
+                kwargs={'course_id': course_id},
+                request=request,
+            ) if course_overview.is_discussion_tab_enabled() else None,
+
+            'video_outline': reverse(
+                'video-summary-list',
+                kwargs={'course_id': course_id},
+                request=request,
+            ),
 
             # Note: The following 2 should be deprecated.
             "social_urls": {
@@ -47,45 +90,7 @@ class CourseOverviewField(serializers.RelatedField):
             "latest_updates": {
                 "video": None
             },
-
         }
-
-        request = self.context.get('request', None)
-        if request:
-            response_data['courseware_access'] = has_access(
-                request.user,
-                'load_mobile',
-                course_overview
-            ).to_json()
-
-            response_data['course_about'] = reverse(
-                'about_course',
-                kwargs={'course_id': course_id},
-                request=request,
-            )
-            response_data['course_updates'] = reverse(
-                'course-updates-list',
-                kwargs={'course_id': course_id},
-                request=request,
-            )
-            response_data['course_handouts'] = reverse(
-                'course-handouts-list',
-                kwargs={'course_id': course_id},
-                request=request,
-            )
-            if course_overview.is_discussion_tab_enabled():
-                response_data['discussion_url'] = reverse(
-                    'discussion_course',
-                    kwargs={'course_id': course_id},
-                    request=request,
-                )
-            response_data['video_outline'] = reverse(
-                'video-summary-list',
-                kwargs={'course_id': course_id},
-                request=request,
-            )
-
-        return response_data
 
 
 class CourseEnrollmentSerializer(serializers.ModelSerializer):

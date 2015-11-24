@@ -19,3 +19,8 @@ if settings.FEATURES["ENABLE_MOBILE_SOCIAL_FACEBOOK_FEATURES"]:
         url(r'^social/facebook/', include('mobile_api.social_facebook.urls')),
         url(r'^settings/', include('mobile_api.social_facebook.preferences.urls')),
     )
+
+if settings.FEATURES["ENABLE_OPENBADGES"]:
+    urlpatterns += (
+        url(r'^badges/', include('mobile_api.badges.urls')),
+    )

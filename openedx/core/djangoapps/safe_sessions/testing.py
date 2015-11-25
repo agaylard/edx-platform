@@ -22,7 +22,7 @@ def safe_cookie_test_session_patch():
             'openedx.core.djangoapps.safe_sessions.middleware.SafeSessionMiddleware' in settings.MIDDLEWARE_CLASSES
         )
 
-    #--- session_id ---> safe_cookie_data ---#
+    ## session_id --> safe_cookie_data ##
 
     # Override Client.login method to update cookies with safe
     # cookies.
@@ -45,7 +45,7 @@ def safe_cookie_test_session_patch():
         return True
     Client.login = login_with_safe_session
 
-    #--- safe_cookie_data ---> session_id ---#
+    ## safe_cookie_data --> session_id ##
 
     # Override Client.session so any safe cookies are parsed before
     # use.
@@ -65,7 +65,7 @@ def safe_cookie_test_session_patch():
         cookie = self.cookies.get(settings.SESSION_COOKIE_NAME, None)
         if cookie:
             session_id = cookie.value
-            if using_safe_cookie_data():
+            if using_safe_cookie_data(settings):
                 try:
                     session_id = SafeCookieData.parse(session_id).session_id
                 except SafeCookieError:

@@ -84,13 +84,13 @@ class SafeCookieData(object):
     to the session id.  It verifies the freshness of the cookie by
     checking its creation date using settings.SESSION_COOKIE_AGE.
     """
-    CURRENT_VERSION = 1
+    CURRENT_VERSION = '1'
     SEPARATOR = u"|"
 
     def __init__(self, version, session_id, key_salt, signature):
         """
         Arguments:
-            version (int): The data model version of the safe cookie
+            version (string): The data model version of the safe cookie
                 data that is checked for forward and backward
                 compatibility.
             session_id (string): Unique and unguessable session
@@ -138,20 +138,15 @@ class SafeCookieData(object):
         """
         try:
             raw_cookie_components = safe_cookie_string.split(cls.SEPARATOR)
-            # the first item in this list is the class's CURRENT_VERSION,
-            # which is an int
-            raw_cookie_components[0] = int(raw_cookie_components[0])
             safe_cookie_data = SafeCookieData(*raw_cookie_components)
-        except ValueError:
-            raise SafeCookieError("SafeCookieData BWC could not be parsed as JSON '{0!r}'.".format(safe_cookie_string))
         except TypeError:
             raise SafeCookieError(
-                "SafeCookieData not instantiated due to number of arguments '{0!r}'.".format(safe_cookie_string)
+                "SafeCookieData not instantiated due to number of arguments: {0!r}.".format(safe_cookie_string)
             )
         else:
             if safe_cookie_data.version != cls.CURRENT_VERSION:
                 raise SafeCookieError(
-                    "SafeCookieData version '{0!r}' is not supported. Current version is '{1}'.".format(
+                    "SafeCookieData version {0!r} is not supported. Current version is {1}.".format(
                         safe_cookie_data.version,
                         cls.CURRENT_VERSION,
                     ))
@@ -161,7 +156,7 @@ class SafeCookieData(object):
         """
         Returns a string serialization of the safe cookie data.
         """
-        return (self.SEPARATOR).join([unicode(self.version), self.session_id, self.key_salt, self.signature])
+        return self.SEPARATOR.join([self.version, self.session_id, self.key_salt, self.signature])
 
     def sign(self, user_id):
         """
@@ -185,7 +180,7 @@ class SafeCookieData(object):
             log.error("SafeCookieData '%r' is not bound to user '%s'.", unicode(self), user_id)
         except signing.BadSignature as sig_error:
             log.error(
-                "SafeCookieData signature error for cookie data '{0!r}': {1}".format(  # pylint: disable=logging-format-interpolation
+                "SafeCookieData signature error for cookie data {0!r}: {1}".format(  # pylint: disable=logging-format-interpolation
                     unicode(self),
                     sig_error.message,
                 )

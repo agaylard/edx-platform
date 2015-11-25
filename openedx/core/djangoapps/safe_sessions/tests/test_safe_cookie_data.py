@@ -6,7 +6,6 @@ Unit tests for SafeCookieData
 import ddt
 from django.test import TestCase
 import itertools
-import json
 from mock import patch
 from time import time
 
@@ -36,7 +35,7 @@ class TestSafeCookieData(TestSafeSessionsLogMixin, TestCase):
 
     @ddt.data(
         *itertools.product(
-            ['test_session_id', 1, 100],
+            ['test_session_id', '1', '100'],
             ['test_user_id', None, 0, 1, 100],
         )
     )
@@ -66,10 +65,10 @@ class TestSafeCookieData(TestSafeSessionsLogMixin, TestCase):
 
     #---- Test Parse ----#
 
-    @ddt.data([1, "session_id", "key_salt", "signature"], [1, "s", "k", "sig"])
+    @ddt.data(['1', 'session_id', 'key_salt', 'signature'], ['1', 's', 'k', 'sig'])
     def test_parse_success(self, cookie_data_fields):
         self.assert_cookie_data_equal(
-            SafeCookieData.parse(json.dumps(cookie_data_fields)),
+            SafeCookieData.parse(SafeCookieData.SEPARATOR.join(cookie_data_fields)),
             SafeCookieData(*cookie_data_fields),
         )
 
@@ -80,21 +79,15 @@ class TestSafeCookieData(TestSafeSessionsLogMixin, TestCase):
             self.safe_cookie_data,
         )
 
-    @ddt.data('', 'invalid_json_string', 's90sfs')
-    def test_parse_invalid_json(self, serialized_value):
-        with self.assert_parse_error():
-            with self.assertRaises(SafeCookieError):
-                SafeCookieData.parse(serialized_value)
-
-    @ddt.data('[]', '[1]', '[1, "s"]', '[1, "s", "k"]', '[1, "s", "k", "sig", "extra"]', '73453')
+    @ddt.data('1', '1|s', '1|s|k', '1|s|k|sig|extra', '73453', 's90sfs')
     def test_parse_invalid_num_args(self, serialized_value):
         with self.assert_logged('SafeCookieData not instantiated due to number of arguments'):
             with self.assertRaises(SafeCookieError):
                 SafeCookieData.parse(serialized_value)
 
-    @ddt.data(0, 2, -1, "\"invalid\"")
+    @ddt.data(0, 2, -1, 'invalid_version')
     def test_parse_invalid_version(self, version):
-        serialized_value = '[{}, "session_id", "key_salt", "signature"]'.format(version)
+        serialized_value = '{}|session_id|key_salt|signature'.format(version)
         with self.assert_logged(r"SafeCookieData version .* is not supported."):
             with self.assertRaises(SafeCookieError):
                 SafeCookieData.parse(serialized_value)

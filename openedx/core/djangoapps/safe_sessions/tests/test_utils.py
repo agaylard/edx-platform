@@ -61,7 +61,7 @@ class TestSafeSessionsLogMixin(object):
         The sig_error_string is the expected additional
         context logged with the error.
         """
-        with self.assert_logged(r'SafeCookieData signature error .*"test_session_id".*: ' + sig_error_string):
+        with self.assert_logged(r'SafeCookieData signature error .*|test_session_id|.*: ' + sig_error_string):
             yield
 
     @contextmanager
@@ -90,7 +90,7 @@ class TestSafeSessionsLogMixin(object):
         Asserts that the logger was called when the
         SafeCookieData object could not be parsed successfully.
         """
-        with self.assert_logged('SafeCookieData BWC could not be parsed as JSON'):
+        with self.assert_logged('SafeCookieData not instantiated due to number of arguments'):
             yield
 
     @contextmanager

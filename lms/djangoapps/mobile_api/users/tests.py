@@ -62,13 +62,14 @@ class TestUserInfoApi(MobileAPITestCase, MobileAuthTestMixin):
 
 
 @ddt.ddt
-class TestUserEnrollmentApi(UrlResetMixin, MobileAPITestCase, MobileAuthUserTestMixin):
+class TestUserEnrollmentApi(UrlResetMixin, MobileAPITestCase, MobileAuthUserTestMixin, MobileCourseAccessTestMixin):
     """
     Tests for /api/mobile/v0.5/users/<user_name>/course_enrollments/
     """
     REVERSE_INFO = {'name': 'courseenrollment-detail', 'params': ['username']}
     ALLOW_ACCESS_TO_UNRELEASED_COURSE = True
     ALLOW_ACCESS_TO_MILESTONE_COURSE = True
+    ALLOW_ACCESS_TO_NON_VISIBLE_COURSE = True
     NEXT_WEEK = datetime.datetime.now(pytz.UTC) + datetime.timedelta(days=7)
     LAST_WEEK = datetime.datetime.now(pytz.UTC) - datetime.timedelta(days=7)
     ADVERTISED_START = "Spring 2016"
@@ -86,7 +87,7 @@ class TestUserEnrollmentApi(UrlResetMixin, MobileAPITestCase, MobileAuthUserTest
         self.assertEqual(len(courses), 1)
 
         found_course = courses[0]['course']
-        self.assertIn('courses/{}/about/'.format(self.course.id), found_course['course_about'])
+        self.assertIn('courses/{}/about'.format(self.course.id), found_course['course_about'])
         self.assertIn('course_info/{}/updates'.format(self.course.id), found_course['course_updates'])
         self.assertIn('course_info/{}/handouts'.format(self.course.id), found_course['course_handouts'])
         self.assertIn('video_outlines/courses/{}'.format(self.course.id), found_course['video_outline'])
@@ -94,7 +95,7 @@ class TestUserEnrollmentApi(UrlResetMixin, MobileAPITestCase, MobileAuthUserTest
         self.assertEqual(courses[0]['mode'], 'honor')
         self.assertEqual(courses[0]['course']['subscription_id'], self.course.clean_id(padding_char='_'))
 
-    def verify_failure(self, response):
+    def verify_failure(self, response, error_type=None):
         self.assertEqual(response.status_code, 200)
         courses = response.data
         self.assertEqual(len(courses), 0)

@@ -9,11 +9,21 @@ from django.forms import (
     Form,
     IntegerField,
     NullBooleanField,
-)
+    Select)
 
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.locator import CourseLocator
 from openedx.core.djangoapps.util.forms import MultiValueField
+
+NULLBOOLEANCHOICES = (
+    (None, ""),
+    (True, True),
+    (True, "true"),
+    (True, "1"),
+    (False, False),
+    (False, "false"),
+    (False, "0"),
+)
 
 
 class _PaginationForm(Form):
@@ -39,7 +49,7 @@ class ThreadListGetForm(_PaginationForm):
     course_id = CharField()
     topic_id = MultiValueField(required=False)
     text_search = CharField(required=False)
-    following = NullBooleanField(required=False)
+    following = NullBooleanField(required=False, widget=Select(choices=NULLBOOLEANCHOICES))
     view = ChoiceField(
         choices=[(choice, choice) for choice in ["unread", "unanswered"]],
         required=False,
@@ -106,9 +116,7 @@ class CommentListGetForm(_PaginationForm):
     A form to validate query parameters in the comment list retrieval endpoint
     """
     thread_id = CharField()
-    # TODO: should we use something better here? This only accepts "True",
-    # "False", "1", and "0"
-    endorsed = NullBooleanField(required=False)
+    endorsed = NullBooleanField(required=False, widget=Select(choices=NULLBOOLEANCHOICES))
 
 
 class CommentActionsForm(Form):

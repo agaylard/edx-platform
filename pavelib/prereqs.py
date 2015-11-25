@@ -182,7 +182,7 @@ def uninstall_python_packages():
     """
     # So that we don't constantly uninstall things, use a version number of the
     # uninstallation needs.  Check it, and skip this if we're up to date.
-    expected_version = 2
+    expected_version = 3
     state_file_path = os.path.join(PREREQS_STATE_DIR, "python_uninstall_version.txt")
     if os.path.isfile(state_file_path):
         with open(state_file_path) as state_file:
@@ -196,21 +196,11 @@ def uninstall_python_packages():
     for _ in range(3):
         uninstalled = False
         frozen = sh("pip freeze", capture=True).splitlines()
-
-        # Uninstall South
-        if any(line.startswith("South") for line in frozen):
-            sh("pip uninstall -y South")
-            uninstalled = True
-
-        # Uninstall edx-val
-        if any("edxval" in line for line in frozen):
-            sh("pip uninstall -y edxval")
-            uninstalled = True
-
-        # Uninstall django-storages
-        if any("django-storages==" in line for line in frozen):
-            sh("pip uninstall -y django-storages")
-            uninstalled = True
+        
+        for package in ("South", "edxval", "django-storages", "django-oauth2-provider"):
+            if any(line.startswith("{}==".format(package)) for line in frozen):
+                sh("pip uninstall -y {}".format(package))
+                uninstalled = True
 
         if not uninstalled:
             break

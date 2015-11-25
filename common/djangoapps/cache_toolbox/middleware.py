@@ -83,6 +83,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.middleware import AuthenticationMiddleware
 from logging import getLogger
 
+from openedx.core.djangoapps.safe_sessions.middleware import SafeSessionMiddleware
 from .model import cache_model
 
 
@@ -96,7 +97,7 @@ class CacheBackedAuthenticationMiddleware(AuthenticationMiddleware):
     def process_request(self, request):
         try:
             # Try and construct a User instance from data stored in the cache
-            session_user_id = request.session[SESSION_KEY]
+            session_user_id = SafeSessionMiddleware.get_user_id_from_session(request)
             if not session_user_id:
                 log.warning(
                     "CacheBackedAuthenticationMiddleware received empty user_id '%s'.",

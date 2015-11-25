@@ -14,7 +14,6 @@ from mock import patch
 
 from student.tests.factories import UserFactory
 
-from .. import testing  # pylint: disable=unused-import
 from ..middleware import SafeSessionMiddleware, SafeCookieData
 from .test_utils import TestSafeSessionsLogMixin
 
@@ -67,7 +66,10 @@ class TestSafeSessionProcessRequest(TestSafeSessionsLogMixin, TestCase):
         """
         Asserts that a user object *is* set on the request's session.
         """
-        self.assertEquals(self.request.session.get(SESSION_KEY), self.user.id)
+        self.assertEquals(
+            SafeSessionMiddleware.get_user_id_from_session(self.request),
+            self.user.id
+        )
 
     def test_success(self):
         self.client.login(username=self.user.username, password='test')
@@ -146,7 +148,7 @@ class TestSafeSessionProcessResponse(TestSafeSessionsLogMixin, TestCase):
         """
         if set_request_user:
             self.request.user = self.user
-            self.request.session[SESSION_KEY] = self.user.id
+            SafeSessionMiddleware.set_user_id_in_session(self.request, self.user)
         if set_session_cookie:
             self.client.response.cookies[settings.SESSION_COOKIE_NAME] = "some_session_id"
 

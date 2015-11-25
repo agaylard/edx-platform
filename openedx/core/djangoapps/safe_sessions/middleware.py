@@ -279,7 +279,7 @@ class SafeSessionMiddleware(SessionMiddleware):
 
         if cookie_data_string and request.session.get(SESSION_KEY):
 
-            user_id = request.session[SESSION_KEY]
+            user_id = self.get_user_id_from_session(request)
             if safe_cookie_data.verify(user_id):  # Step 4
                 request.safe_cookie_verified_user_id = user_id  # Step 5
             else:
@@ -315,7 +315,7 @@ class SafeSessionMiddleware(SessionMiddleware):
 
         if not _is_cookie_marked_for_deletion(request) and _is_cookie_present(response):
             try:
-                user_id_in_session = request.session.get(SESSION_KEY)
+                user_id_in_session = self.get_user_id_from_session(request)
                 self._verify_user(request, user_id_in_session)  # Step 2
 
                 # Use the user_id marked in the session instead of the
@@ -363,6 +363,34 @@ class SafeSessionMiddleware(SessionMiddleware):
                         userid_in_session,
                     ),
                 )
+
+    @staticmethod
+    def get_user_id_from_session(request):
+        """
+        Return the user_id stored in the session of the request.
+        """
+        # Starting in django 1.8, the user_id is now serialized
+        # as a string in the session.  Before, it was stored
+        # directly as an integer. If back-porting to prior to
+        # django 1.8, replace the implementation of this method
+        # with:
+        # return request.session[SESSION_KEY]
+        from django.contrib.auth import _get_user_session_key
+        return _get_user_session_key(request)
+
+    @staticmethod
+    def set_user_id_in_session(request, user):
+        """
+        Stores the user_id in the session of the request.
+        Used by unit tests.
+        """
+        # Starting in django 1.8, the user_id is now serialized
+        # as a string in the session.  Before, it was stored
+        # directly as an integer. If back-porting to prior to
+        # django 1.8, replace the implementation of this method
+        # with:
+        # request.session[SESSION_KEY] = user.id
+        request.session[SESSION_KEY] = user._meta.pk.value_to_string(user)  # pylint: disable=protected-access
 
     @staticmethod
     def update_with_safe_session_cookie(cookies, user_id):

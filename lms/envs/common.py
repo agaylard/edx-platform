@@ -1130,8 +1130,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
 
     # Instead of SessionMiddleware, we use a more secure version
-    # 'django.contrib.sessions.middleware.SessionMiddleware',
-    'openedx.core.djangoapps.safe_sessions.middleware.SafeSessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    # 'openedx.core.djangoapps.safe_sessions.middleware.SafeSessionMiddleware',
 
     # Instead of AuthenticationMiddleware, we use a cached backed version
     #'django.contrib.auth.middleware.AuthenticationMiddleware',

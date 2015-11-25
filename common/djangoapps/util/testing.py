@@ -13,12 +13,6 @@ from django.test import TestCase
 
 from util.db import OuterAtomic, CommitOnSuccessManager
 
-from openedx.core.djangoapps.safe_sessions.testing import safe_cookie_test_session_patch
-
-
-# Override the Test Client's session and login to support safe cookies.
-safe_cookie_test_session_patch()
-
 
 class UrlResetMixin(object):
     """Mixin to reset urls.py before and after a test
@@ -165,3 +159,11 @@ def patch_testcase():
     # pylint: disable=protected-access
     TestCase._enter_atomics = enter_atomics_wrapper(TestCase._enter_atomics)
     TestCase._rollback_atomics = rollback_atomics_wrapper(TestCase._rollback_atomics)
+
+
+def patch_sessions():
+    """
+    Override the Test Client's session and login to support safe cookies.
+    """
+    from openedx.core.djangoapps.safe_sessions.testing import safe_cookie_test_session_patch
+    safe_cookie_test_session_patch()

@@ -11,6 +11,15 @@ var edx = edx || {};
     edx.verify_student.IntroStepView = edx.verify_student.StepView.extend({
 
         templateName: "intro_step",
+        btnClass: 'action-primary',
+
+        initialize: function( obj ) {
+            _.extend( this, obj );
+           if (this.templateContext().isABTesting) {
+               this.templateName = "intro_step_ab_testing";
+               this.btnClass = 'action-primary-blue';
+           }
+        },
 
         defaultContext: function() {
             return {

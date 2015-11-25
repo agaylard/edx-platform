@@ -102,11 +102,17 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         result = self.client.login(username=self.USERNAME, password=self.PASSWORD)
         self.assertTrue(result, msg="Could not log in")
 
-    @ddt.data("verified", "professional")
-    def test_start_flow_not_verified(self, course_mode):
+    @ddt.data(
+        ("verified", "verify_student_start_flow"),
+        ("professional", "verify_student_start_flow"),
+        ("verified", "verify_student_start_flow_ab"),
+        ("professional", "verify_student_start_flow_ab")
+    )
+    @ddt.unpack
+    def test_start_flow_not_verified(self, course_mode, payment_flow):
         course = self._create_course(course_mode)
         self._enroll(course.id, "honor")
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
         self._assert_displayed_mode(response, course_mode)
         self._assert_steps_displayed(
             response,
@@ -114,18 +120,23 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
             PayAndVerifyView.MAKE_PAYMENT_STEP
         )
         self._assert_messaging(response, PayAndVerifyView.FIRST_TIME_VERIFY_MSG)
-        self._assert_requirements_displayed(response, [
-            PayAndVerifyView.PHOTO_ID_REQ,
-            PayAndVerifyView.WEBCAM_REQ,
-        ])
+        if payment_flow == "verify_student_start_flow_ab":
+            self._assert_requirements_displayed(response, [
+                PayAndVerifyView.PHOTO_ID_REQ,
+                PayAndVerifyView.WEBCAM_REQ,
+            ])
         self._assert_upgrade_session_flag(False)
 
-    @ddt.data("no-id-professional")
-    def test_start_flow_with_no_id_professional(self, course_mode):
+    @ddt.data(
+        ("no-id-professional", "verify_student_start_flow"),
+        ("no-id-professional", "verify_student_start_flow_ab")
+    )
+    @ddt.unpack
+    def test_start_flow_with_no_id_professional(self, course_mode, payment_flow):
         course = self._create_course(course_mode)
         # by default enrollment is honor
         self._enroll(course.id, "honor")
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
         self._assert_displayed_mode(response, course_mode)
         self._assert_steps_displayed(
             response,
@@ -135,12 +146,16 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         self._assert_messaging(response, PayAndVerifyView.FIRST_TIME_VERIFY_MSG)
         self._assert_requirements_displayed(response, [])
 
-    @ddt.data("expired", "denied")
-    def test_start_flow_expired_or_denied_verification(self, verification_status):
+    @ddt.data(
+        ("expired", "verify_student_start_flow"),
+        ("denied", "verify_student_start_flow_ab")
+    )
+    @ddt.unpack
+    def test_start_flow_expired_or_denied_verification(self, verification_status, payment_flow):
         course = self._create_course("verified")
         self._enroll(course.id, "verified")
         self._set_verification_status(verification_status)
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
 
         # Expect the same content as when the user has not verified
         self._assert_steps_displayed(
@@ -155,18 +170,24 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         ])
 
     @ddt.data(
-        ("verified", "submitted"),
-        ("verified", "approved"),
-        ("verified", "error"),
-        ("professional", "submitted"),
-        ("no-id-professional", None),
+        ("verified", "submitted", "verify_student_start_flow"),
+        ("verified", "approved", "verify_student_start_flow"),
+        ("verified", "error", "verify_student_start_flow"),
+        ("professional", "submitted", "verify_student_start_flow"),
+        ("no-id-professional", None, "verify_student_start_flow"),
+        ("verified", "submitted", "verify_student_start_flow_ab"),
+        ("verified", "approved", "verify_student_start_flow_ab"),
+        ("verified", "error", "verify_student_start_flow_ab"),
+        ("professional", "submitted", "verify_student_start_flow_ab"),
+        ("no-id-professional", None, "verify_student_start_flow_ab"),
+
     )
     @ddt.unpack
-    def test_start_flow_already_verified(self, course_mode, verification_status):
+    def test_start_flow_already_verified(self, course_mode, verification_status, payment_flow):
         course = self._create_course(course_mode)
         self._enroll(course.id, "honor")
         self._set_verification_status(verification_status)
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
         self._assert_displayed_mode(response, course_mode)
         self._assert_steps_displayed(
             response,
@@ -176,11 +197,17 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         self._assert_messaging(response, PayAndVerifyView.FIRST_TIME_VERIFY_MSG)
         self._assert_requirements_displayed(response, [])
 
-    @ddt.data("verified", "professional")
-    def test_start_flow_already_paid(self, course_mode):
+    @ddt.data(
+        ("verified", "verify_student_start_flow"),
+        ("professional", "verify_student_start_flow"),
+        ("verified", "verify_student_start_flow_ab"),
+        ("professional", "verify_student_start_flow_ab")
+    )
+    @ddt.unpack
+    def test_start_flow_already_paid(self, course_mode, payment_flow):
         course = self._create_course(course_mode)
         self._enroll(course.id, course_mode)
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
         self._assert_displayed_mode(response, course_mode)
         self._assert_steps_displayed(
             response,
@@ -193,15 +220,16 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
             PayAndVerifyView.WEBCAM_REQ,
         ])
 
-    def test_start_flow_not_enrolled(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_start_flow_not_enrolled(self, payment_flow):
         course = self._create_course("verified")
         self._set_verification_status("submitted")
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
 
         # This shouldn't happen if the student has been auto-enrolled,
         # but if they somehow end up on this page without enrolling,
         # treat them as if they need to pay
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
         self._assert_steps_displayed(
             response,
             PayAndVerifyView.PAYMENT_STEPS,
@@ -209,7 +237,8 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         )
         self._assert_requirements_displayed(response, [])
 
-    def test_start_flow_unenrolled(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_start_flow_unenrolled(self, payment_flow):
         course = self._create_course("verified")
         self._set_verification_status("submitted")
         self._enroll(course.id, "verified")
@@ -217,7 +246,7 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
 
         # If unenrolled, treat them like they haven't paid at all
         # (we assume that they've gotten a refund or didn't pay initially)
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
         self._assert_steps_displayed(
             response,
             PayAndVerifyView.PAYMENT_STEPS,
@@ -226,27 +255,31 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         self._assert_requirements_displayed(response, [])
 
     @ddt.data(
-        ("verified", "submitted"),
-        ("verified", "approved"),
-        ("professional", "submitted")
+        ("verified", "submitted", "verify_student_start_flow"),
+        ("verified", "approved", "verify_student_start_flow"),
+        ("professional", "submitted", "verify_student_start_flow"),
+        ("verified", "submitted", "verify_student_start_flow_ab"),
+        ("verified", "approved", "verify_student_start_flow_ab"),
+        ("professional", "submitted", "verify_student_start_flow_ab")
     )
     @ddt.unpack
-    def test_start_flow_already_verified_and_paid(self, course_mode, verification_status):
+    def test_start_flow_already_verified_and_paid(self, course_mode, verification_status, payment_flow):
         course = self._create_course(course_mode)
         self._enroll(course.id, course_mode)
         self._set_verification_status(verification_status)
         response = self._get_page(
-            'verify_student_start_flow',
+            payment_flow,
             course.id,
             expected_status_code=302
         )
         self._assert_redirects_to_dashboard(response)
 
     @patch.dict(settings.FEATURES, {"IS_EDX_DOMAIN": True})
-    def test_pay_and_verify_hides_header_nav(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_pay_and_verify_hides_header_nav(self, payment_flow):
         course = self._create_course("verified")
         self._enroll(course.id, "verified")
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
 
         # Verify that the header navigation links are hidden for the edx.org version
         self.assertNotContains(response, "How it Works")
@@ -352,7 +385,8 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
             PayAndVerifyView.WEBCAM_REQ,
         ])
 
-    def test_payment_cannot_skip(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_payment_cannot_skip(self, payment_flow):
         """
          Simple test to verify that certain steps cannot be skipped. This test sets up
          a scenario where the user should be on the MAKE_PAYMENT_STEP, but is trying to
@@ -361,7 +395,7 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         """
         course = self._create_course("verified")
         response = self._get_page(
-            'verify_student_start_flow',
+            payment_flow,
             course.id,
             skip_first_step=True
         )
@@ -533,6 +567,7 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
 
         pages = [
             'verify_student_start_flow',
+            'verify_student_start_flow_ab',
             'verify_student_verify_now',
             'verify_student_upgrade_and_verify',
             'verify_student_upgrade_and_verify_ab',
@@ -545,16 +580,25 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
                 expected_status_code=404
             )
 
-    @ddt.data([], ["no-id-professional", "professional"], ["honor", "audit"])
-    def test_no_id_professional_entry_point(self, modes_available):
+    @ddt.data(
+        ([], "verify_student_start_flow"),
+        (["no-id-professional", "professional"], "verify_student_start_flow"),
+        (["honor", "audit"], "verify_student_start_flow"),
+        ([], "verify_student_start_flow_ab"),
+        (["no-id-professional", "professional"], "verify_student_start_flow_ab"),
+        (["honor", "audit"], "verify_student_start_flow_ab"),
+    )
+    @ddt.unpack
+    def test_no_id_professional_entry_point(self, modes_available, payment_flow):
         course = self._create_course(*modes_available)
         if "no-id-professional" in modes_available or "professional" in modes_available:
-            self._get_page("verify_student_start_flow", course.id, expected_status_code=200)
+            self._get_page(payment_flow, course.id, expected_status_code=200)
         else:
-            self._get_page("verify_student_start_flow", course.id, expected_status_code=404)
+            self._get_page(payment_flow, course.id, expected_status_code=404)
 
     @ddt.data(
         "verify_student_start_flow",
+        "verify_student_start_flow_ab",
         "verify_student_verify_now",
         "verify_student_upgrade_and_verify",
         "verify_student_upgrade_and_verify_ab",
@@ -573,6 +617,7 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
 
     @ddt.data(
         "verify_student_start_flow",
+        "verify_student_start_flow_ab",
         "verify_student_verify_now",
         "verify_student_upgrade_and_verify_ab",
     )
@@ -584,11 +629,12 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
             expected_status_code=404
         )
 
-    def test_account_not_active(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_account_not_active(self, payment_flow):
         self.user.is_active = False
         self.user.save()
         course = self._create_course("verified")
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
         self._assert_steps_displayed(
             response,
             PayAndVerifyView.PAYMENT_STEPS + PayAndVerifyView.VERIFICATION_STEPS,
@@ -600,32 +646,36 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
             PayAndVerifyView.WEBCAM_REQ,
         ])
 
-    def test_no_contribution(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_no_contribution(self, payment_flow):
         # Do NOT specify a contribution for the course in a session var.
         course = self._create_course("verified")
-        response = self._get_page("verify_student_start_flow", course.id)
+        response = self._get_page(payment_flow, course.id)
         self._assert_contribution_amount(response, "")
 
-    def test_contribution_other_course(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_contribution_other_course(self, payment_flow):
         # Specify a contribution amount for another course in the session
         course = self._create_course("verified")
         other_course_id = CourseLocator(org="other", run="test", course="test")
         self._set_contribution("12.34", other_course_id)
 
         # Expect that the contribution amount is NOT pre-filled,
-        response = self._get_page("verify_student_start_flow", course.id)
+        response = self._get_page(payment_flow, course.id)
         self._assert_contribution_amount(response, "")
 
-    def test_contribution(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_contribution(self, payment_flow):
         # Specify a contribution amount for this course in the session
         course = self._create_course("verified")
         self._set_contribution("12.34", course.id)
 
         # Expect that the contribution amount is pre-filled,
-        response = self._get_page("verify_student_start_flow", course.id)
+        response = self._get_page(payment_flow, course.id)
         self._assert_contribution_amount(response, "12.34")
 
-    def test_verification_deadline(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_verification_deadline(self, payment_flow):
         deadline = datetime(2999, 1, 2, tzinfo=pytz.UTC)
         course = self._create_course("verified")
 
@@ -637,7 +687,7 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         self._set_deadlines(course.id, upgrade_deadline=deadline, verification_deadline=deadline)
 
         # Expect that the expiration date is set
-        response = self._get_page("verify_student_start_flow", course.id)
+        response = self._get_page(payment_flow, course.id)
         data = self._get_page_data(response)
         self.assertEqual(data['verification_deadline'], "Jan 02, 2999 at 00:00 UTC")
 
@@ -675,6 +725,7 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         # We should get an error message since the deadline has passed.
         for page_name in [
             "verify_student_start_flow",
+            "verify_student_start_flow_ab",
             "verify_student_upgrade_and_verify",
             "verify_student_upgrade_and_verify_ab"
         ]:
@@ -724,18 +775,20 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         self.assertContains(response, "Jan 02, 1999 at 00:00 UTC")
 
     @mock.patch.dict(settings.FEATURES, {'EMBARGO': True})
-    def test_embargo_restrict(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_embargo_restrict(self, payment_flow):
         course = self._create_course("verified")
         with restrict_course(course.id) as redirect_url:
             # Simulate that we're embargoed from accessing this
             # course based on our IP address.
-            response = self._get_page('verify_student_start_flow', course.id, expected_status_code=302)
+            response = self._get_page(payment_flow, course.id, expected_status_code=302)
             self.assertRedirects(response, redirect_url)
 
     @mock.patch.dict(settings.FEATURES, {'EMBARGO': True})
-    def test_embargo_allow(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_embargo_allow(self, payment_flow):
         course = self._create_course("verified")
-        self._get_page('verify_student_start_flow', course.id)
+        self._get_page(payment_flow, course.id)
 
     def _create_course(self, *course_modes, **kwargs):
         """Create a new course with the specified course modes. """
@@ -934,7 +987,8 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
         url = reverse('verify_student_upgrade_and_verify', kwargs={'course_id': unicode(course_id)})
         self.assertRedirects(response, url)
 
-    def test_course_upgrade_page_with_unicode_and_special_values_in_display_name(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_course_upgrade_page_with_unicode_and_special_values_in_display_name(self, payment_flow):
         """Check the course information on the page. """
         mode_display_name = u"Introduction à l'astrophysique"
         course = CourseFactory.create(display_name=mode_display_name)
@@ -948,13 +1002,14 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
             )
 
         self._enroll(course.id, "honor")
-        response_dict = self._get_page_data(self._get_page('verify_student_start_flow', course.id))
+        response_dict = self._get_page_data(self._get_page(payment_flow, course.id))
 
         self.assertEqual(response_dict['course_name'], mode_display_name)
 
     @httpretty.activate
     @override_settings(ECOMMERCE_API_URL=TEST_API_URL, ECOMMERCE_API_SIGNING_KEY=TEST_API_SIGNING_KEY)
-    def test_processors_api(self):
+    @ddt.data("verify_student_start_flow", "verify_student_start_flow_ab")
+    def test_processors_api(self, payment_flow):
         """
         Check that when working with a product being processed by the
         ecommerce api, we correctly call to that api for the list of
@@ -973,7 +1028,7 @@ class TestPayAndVerifyView(UrlResetMixin, ModuleStoreTestCase, XssTestMixin):
             content_type="application/json",
         )
         # make the server request
-        response = self._get_page('verify_student_start_flow', course.id)
+        response = self._get_page(payment_flow, course.id)
         self.assertEqual(response.status_code, 200)
 
         # ensure the mock api call was made.  NOTE: the following line

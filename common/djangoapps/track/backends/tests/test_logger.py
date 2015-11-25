@@ -51,7 +51,7 @@ class TestLoggerBackend(TestCase):
         self.assertEqual(saved_events[0], unpacked_event)
         self.assertEqual(saved_events[1], unpacked_event)
 
-    @patch('track.utils.application_log')
+    @patch('track.backends.logger.application_log')
     def test_logger_backend_unicode_character(self, application_log):
         """
         When event information contain utf and latin1 characters
@@ -74,10 +74,10 @@ class TestLoggerBackend(TestCase):
         self.backend.send(latin_characters)
         # latin_characters dict will raise UnicodeDecodeError due to encoded_latin and also
         # ensure that only called with effected event item data.
-        application_log.warning.assert_called_with(
-            "UnicodeDecodeError Event-Data: %s", latin_characters['encoded_latin'].encode('latin1')
+        application_log.exception.assert_called_with(
+            "UnicodeDecodeError Event-Data: %s", latin_characters
         )
-        self.assertEqual(application_log.warning.call_count, 2)
+        self.assertEqual(application_log.exception.call_count, 1)
 
         saved_events = [json.loads(e) for e in self.handler.messages['info']]
         self.assertEqual(saved_events[0]['unicode'], unicode_characters['unicode'])

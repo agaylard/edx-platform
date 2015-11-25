@@ -2,11 +2,8 @@
 
 from datetime import datetime, date
 import json
-import logging
 
 from pytz import UTC
-
-application_log = logging.getLogger('track.backends.application_log')  # pylint: disable=invalid-name
 
 
 class DateTimeJSONEncoder(json.JSONEncoder):
@@ -20,7 +17,7 @@ class DateTimeJSONEncoder(json.JSONEncoder):
         """
         if isinstance(obj, datetime):
             if obj.tzinfo is None:
-                # Localize to UTC naive datetime objects
+                # Localize to UTC native datetime objects
                 obj = UTC.localize(obj)
             else:
                 # Convert to UTC datetime objects from other timezones
@@ -39,9 +36,7 @@ class LatinJSONEncoder(DateTimeJSONEncoder):
 
     def encode(self, obj):
         """
-        encode method gets an original object
-        and returns result string. obj argument will be the
-        object that is passed to json.dumps function
+        Returns json-encoded representation `of obj.
         """
         obj = self.iterate_dictionary(obj)
 
@@ -49,19 +44,18 @@ class LatinJSONEncoder(DateTimeJSONEncoder):
 
     def iterate_dictionary(self, obj):
         """
-        Iterate over nested dict structure
+        This tests that all strings are decodeable as utf8. If some string is not, it then tries instead to decode as
+        latin1, and if succeeds, tries to "fix" by substituting the decoded string.
         """
         for key, value in obj.iteritems():
             if isinstance(value, dict):
                 self.iterate_dictionary(value)
             elif isinstance(value, str):
                 try:
-                    obj[key].decode('utf8')
-                except UnicodeDecodeError:
                     # Will throw UnicodeDecodeError in cases when there are
                     # latin1 encoded characters in string.
                     #  Example {'string': '\xd3 \xe9 \xf1'}
-                    application_log.warning("UnicodeDecodeError Event-Data: %s", obj[key])
+                    obj[key].decode('utf8')
+                except UnicodeDecodeError:
                     obj[key] = obj[key].decode('latin1')
         return obj
-
